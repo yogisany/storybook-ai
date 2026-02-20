@@ -63,50 +63,43 @@ export const generateStory = async (params: {
 };
 
 /**
- * Generate Illustration using Freepik API
+ * Generate Illustration using Freepik API (via Server Proxy)
  */
 export const generateIllustration = async (prompt: string) => {
   const freepikKey = useStore.getState().brandSettings.freepikApiKey;
   
   if (freepikKey) {
-    console.log("Mencoba generate gambar via Freepik...");
+    console.log("Mencoba generate gambar via Freepik (Proxy)...");
     try {
-      const response = await fetch("https://api.freepik.com/v1/ai/text-to-image", {
+      const response = await fetch("/api/generate-image", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "x-freepik-api-key": freepikKey
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           prompt: `Children's book illustration, cute cartoon style, bright colors, Disney-like aesthetic, high quality, consistent character: ${prompt}`,
-          num_images: 1,
-          image: {
-            size: "square_1024"
-          },
-          styling: {
-            style: "cartoon"
-          }
+          apiKey: freepikKey
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `Freepik API Error: ${response.status}`);
+        throw new Error(errorData.message || `Server Proxy Error: ${response.status}`);
       }
 
       const data = await response.json();
-      // Freepik usually returns an array of images with base64 or URL
-      // Based on their typical response structure:
-      if (data.data && data.data[0] && data.data[0].base64) {
-        console.log("Berhasil generate gambar via Freepik (Base64)");
-        return `data:image/png;base64,${data.data[0].base64}`;
-      } else if (data.data && data.data[0] && data.data[0].url) {
-        console.log("Berhasil generate gambar via Freepik (URL)");
-        return data.data[0].url;
-      } else {
-        throw new Error("Respon Freepik tidak berisi data gambar.");
+      
+      // Freepik response structure: data[0].base64 or data[0].url
+      if (data.data && data.data[0]) {
+        if (data.data[0].base64) {
+          console.log("Berhasil generate gambar via Freepik (Base64)");
+          return `data:image/png;base64,${data.data[0].base64}`;
+        } else if (data.data[0].url) {
+          console.log("Berhasil generate gambar via Freepik (URL)");
+          return data.data[0].url;
+        }
       }
+      throw new Error("Respon Freepik tidak berisi data gambar.");
     } catch (err: any) {
       console.error("Freepik Gagal:", err);
       console.warn("Beralih ke Pollinations.ai sebagai cadangan...");

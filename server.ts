@@ -80,6 +80,49 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  // Proxy for Freepik Image Generation (to avoid CORS)
+  app.post("/api/generate-image", async (req, res) => {
+    const { prompt, apiKey } = req.body;
+    
+    if (!apiKey) {
+      return res.status(400).json({ error: "Freepik API Key is required" });
+    }
+
+    try {
+      console.log(`[Freepik Proxy] Generating image for prompt: ${prompt.substring(0, 50)}...`);
+      const response = await fetch("https://api.freepik.com/v1/ai/text-to-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "x-freepik-api-key": apiKey
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          num_images: 1,
+          image: {
+            size: "square_1024"
+          },
+          styling: {
+            style: "cartoon"
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Unknown error from Freepik" }));
+        console.error("[Freepik Proxy] Error response:", errorData);
+        return res.status(response.status).json(errorData);
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      console.error("[Freepik Proxy] Request failed:", error);
+      res.status(500).json({ error: error.message || "Internal Server Error" });
+    }
+  });
+
   // Admin: Create User without Sign Up
   app.post("/api/admin/create-user", async (req, res) => {
     console.log("Received admin user creation request:", req.body.email);
