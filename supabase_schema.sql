@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS brand_settings (
   tagline TEXT DEFAULT 'by Erna',
   logo_url TEXT DEFAULT 'https://storage.googleapis.com/generativeai-downloads/images/sfx-logo.png',
   gemini_api_key TEXT,
+  gemini_api_keys TEXT,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

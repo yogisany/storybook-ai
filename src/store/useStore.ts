@@ -36,7 +36,7 @@ interface BrandSettings {
   name: string;
   tagline: string;
   logoUrl: string;
-  geminiApiKey?: string;
+  geminiApiKeys?: string; // Stored as newline-separated string
 }
 
 interface StoryState {
@@ -68,7 +68,7 @@ export const useStore = create<StoryState>((set, get) => ({
     name: 'Kisah Ai',
     tagline: 'by Erna',
     logoUrl: 'https://storage.googleapis.com/generativeai-downloads/images/sfx-logo.png',
-    geminiApiKey: ''
+    geminiApiKeys: ''
   },
   currentBook: null,
   myBooks: [],
@@ -100,7 +100,7 @@ export const useStore = create<StoryState>((set, get) => ({
             name: data.name,
             tagline: data.tagline,
             logoUrl: data.logo_url,
-            geminiApiKey: data.gemini_api_key
+            geminiApiKeys: data.gemini_api_keys || data.gemini_api_key || ''
           }
         });
       }

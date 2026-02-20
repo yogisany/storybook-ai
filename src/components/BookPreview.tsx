@@ -82,8 +82,8 @@ export const BookPreview = () => {
           // Save to Supabase
           await supabase.from('pages').update({ illustration_url: url }).eq('id', page.id);
         }
-        // Increased delay to 3 seconds to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Increased delay to 5 seconds to avoid rate limits on free tier
+        await new Promise(resolve => setTimeout(resolve, 5000));
       } catch (err: any) {
         console.error(`Failed to generate image for page ${page.pageNumber}:`, err);
         if (err.message?.includes("429") || err.message?.includes("quota")) {
