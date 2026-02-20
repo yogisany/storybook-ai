@@ -63,67 +63,56 @@ export const generateStory = async (params: {
 };
 
 /**
- * OpenRouter Client for Image Generation
- */
-const getOpenRouterClient = () => {
-  const apiKey = useStore.getState().brandSettings.openrouterApiKey;
-  if (!apiKey) return null;
-  
-  return new OpenAI({
-    apiKey: apiKey,
-    baseURL: "https://openrouter.ai/api/v1",
-    dangerouslyAllowBrowser: true,
-    defaultHeaders: {
-      "HTTP-Referer": window.location.origin,
-      "X-Title": "Kisah Ai",
-    }
-  });
-};
-
-/**
- * Generate Illustration using OpenRouter (Flux or Imagen)
+ * Generate Illustration using Freepik API
  */
 export const generateIllustration = async (prompt: string) => {
-  const openrouter = getOpenRouterClient();
+  const freepikKey = useStore.getState().brandSettings.freepikApiKey;
   
-  if (openrouter) {
-    console.log("Mencoba generate gambar via OpenRouter...");
-    
-    // List of models to try in order of preference
-    const models = [
-      "black-forest-labs/flux-schnell",
-      "openai/dall-e-3",
-      "google/imagen-3"
-    ];
-
-    for (const model of models) {
-      try {
-        console.log(`Menggunakan model: ${model}`);
-        const response = await openrouter.images.generate({
-          model: model, 
+  if (freepikKey) {
+    console.log("Mencoba generate gambar via Freepik...");
+    try {
+      const response = await fetch("https://api.freepik.com/v1/ai/text-to-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "x-freepik-api-key": freepikKey
+        },
+        body: JSON.stringify({
           prompt: `Children's book illustration, cute cartoon style, bright colors, Disney-like aesthetic, high quality, consistent character: ${prompt}`,
-          n: 1,
-          size: "1024x1024",
-        });
+          num_images: 1,
+          image: {
+            size: "square_1024"
+          },
+          styling: {
+            style: "cartoon"
+          }
+        })
+      });
 
-        if (response.data && response.data[0] && response.data[0].url) {
-          console.log(`Berhasil generate gambar via OpenRouter (${model})`);
-          return response.data[0].url;
-        }
-      } catch (err: any) {
-        console.error(`Gagal dengan model ${model}:`, err?.message || err);
-        // If it's a 1033 or other Cloudflare/Network error, we might want to try the next model
-        // but if it's a 401/403, it's likely an API key issue, so we stop.
-        if (err?.status === 401 || err?.status === 403) {
-          console.error("Masalah Autentikasi: Cek API Key OpenRouter Anda.");
-          break; 
-        }
-        continue; // Try next model
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Freepik API Error: ${response.status}`);
       }
+
+      const data = await response.json();
+      // Freepik usually returns an array of images with base64 or URL
+      // Based on their typical response structure:
+      if (data.data && data.data[0] && data.data[0].base64) {
+        console.log("Berhasil generate gambar via Freepik (Base64)");
+        return `data:image/png;base64,${data.data[0].base64}`;
+      } else if (data.data && data.data[0] && data.data[0].url) {
+        console.log("Berhasil generate gambar via Freepik (URL)");
+        return data.data[0].url;
+      } else {
+        throw new Error("Respon Freepik tidak berisi data gambar.");
+      }
+    } catch (err: any) {
+      console.error("Freepik Gagal:", err);
+      console.warn("Beralih ke Pollinations.ai sebagai cadangan...");
     }
-    console.warn("Semua model OpenRouter gagal, beralih ke Pollinations.ai...");
   } else {
-    console.warn("API Key OpenRouter tidak ditemukan, menggunakan Pollinations.ai...");
+    console.warn("API Key Freepik tidak ditemukan, menggunakan Pollinations.ai...");
   }
 
   // Fallback to Pollinations.ai

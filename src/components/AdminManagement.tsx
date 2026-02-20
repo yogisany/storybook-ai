@@ -269,15 +269,15 @@ export const AdminManagement = () => {
               </div>
 
               <div className="flex-1">
-                <label className="block text-xs font-bold text-amber-700 mb-2 uppercase tracking-wider">OpenRouter API Key (Gambar)</label>
+                <label className="block text-xs font-bold text-amber-700 mb-2 uppercase tracking-wider">Freepik API Key (Gambar)</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-400" size={18} />
                   <input
                     type="password"
                     className="w-full pl-12 pr-4 py-3 rounded-2xl border border-amber-200 focus:ring-2 focus:ring-amber-500 outline-none transition-all bg-white"
-                    placeholder="Masukkan API Key OpenRouter..."
-                    value={brandSettings.openrouterApiKey || ''}
-                    onChange={(e) => updateBrand({ openrouterApiKey: e.target.value })}
+                    placeholder="Masukkan API Key Freepik..."
+                    value={brandSettings.freepikApiKey || ''}
+                    onChange={(e) => updateBrand({ freepikApiKey: e.target.value })}
                   />
                 </div>
               </div>
@@ -295,7 +295,7 @@ export const AdminManagement = () => {
                           tagline: brandSettings.tagline,
                           logo_url: brandSettings.logoUrl,
                           groq_api_key: brandSettings.groqApiKey,
-                          openrouter_api_key: brandSettings.openrouterApiKey,
+                          freepik_api_key: brandSettings.freepikApiKey,
                           updated_at: new Date().toISOString()
                         });
                       

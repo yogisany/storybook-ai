@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS brand_settings (
   gemini_api_key TEXT,
   gemini_api_keys TEXT,
   groq_api_key TEXT,
-  openrouter_api_key TEXT,
+  freepik_api_key TEXT,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
