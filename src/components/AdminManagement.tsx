@@ -255,7 +255,7 @@ export const AdminManagement = () => {
           <div className="p-6 bg-amber-50 rounded-[2rem] border border-amber-100">
             <div className="flex flex-col md:flex-row gap-6">
               <div className="flex-1">
-                <label className="block text-xs font-bold text-amber-700 mb-2 uppercase tracking-wider">Groq API Key (Wajib)</label>
+                <label className="block text-xs font-bold text-amber-700 mb-2 uppercase tracking-wider">Groq API Key (Teks)</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-400" size={18} />
                   <input
@@ -266,9 +266,34 @@ export const AdminManagement = () => {
                     onChange={(e) => updateBrand({ groqApiKey: e.target.value })}
                   />
                 </div>
-                <p className="mt-3 text-[11px] text-amber-600 leading-relaxed">
-                  <strong>Info:</strong> Aplikasi kini menggunakan Groq untuk membuat cerita (teks) dan Pollinations.ai untuk gambar (gratis & tanpa limit).
-                </p>
+              </div>
+
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-amber-700 mb-2 uppercase tracking-wider">OpenAI API Key (Gambar)</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-400" size={18} />
+                  <input
+                    type="password"
+                    className="w-full pl-12 pr-4 py-3 rounded-2xl border border-amber-200 focus:ring-2 focus:ring-amber-500 outline-none transition-all bg-white"
+                    placeholder="Masukkan API Key OpenAI..."
+                    value={brandSettings.openaiApiKey || ''}
+                    onChange={(e) => updateBrand({ openaiApiKey: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-amber-700 mb-2 uppercase tracking-wider">OpenRouter API Key (Gambar)</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-400" size={18} />
+                  <input
+                    type="password"
+                    className="w-full pl-12 pr-4 py-3 rounded-2xl border border-amber-200 focus:ring-2 focus:ring-amber-500 outline-none transition-all bg-white"
+                    placeholder="Masukkan API Key OpenRouter..."
+                    value={brandSettings.openrouterApiKey || ''}
+                    onChange={(e) => updateBrand({ openrouterApiKey: e.target.value })}
+                  />
+                </div>
               </div>
 
               <div className="flex items-end">
@@ -284,6 +309,8 @@ export const AdminManagement = () => {
                           tagline: brandSettings.tagline,
                           logo_url: brandSettings.logoUrl,
                           groq_api_key: brandSettings.groqApiKey,
+                          openai_api_key: brandSettings.openaiApiKey,
+                          openrouter_api_key: brandSettings.openrouterApiKey,
                           updated_at: new Date().toISOString()
                         });
                       

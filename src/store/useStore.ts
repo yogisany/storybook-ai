@@ -37,6 +37,8 @@ interface BrandSettings {
   tagline: string;
   logoUrl: string;
   groqApiKey?: string;
+  openaiApiKey?: string;
+  openrouterApiKey?: string;
 }
 
 interface StoryState {
@@ -68,7 +70,9 @@ export const useStore = create<StoryState>((set, get) => ({
     name: 'Kisah Ai',
     tagline: 'by Erna',
     logoUrl: 'https://storage.googleapis.com/generativeai-downloads/images/sfx-logo.png',
-    groqApiKey: ''
+    groqApiKey: '',
+    openaiApiKey: '',
+    openrouterApiKey: ''
   },
   currentBook: null,
   myBooks: [],
@@ -100,7 +104,9 @@ export const useStore = create<StoryState>((set, get) => ({
             name: data.name,
             tagline: data.tagline,
             logoUrl: data.logo_url,
-            groqApiKey: data.groq_api_key || ''
+            groqApiKey: data.groq_api_key || '',
+            openaiApiKey: data.openai_api_key || '',
+            openrouterApiKey: data.openrouter_api_key || ''
           }
         });
       }

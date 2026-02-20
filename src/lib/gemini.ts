@@ -63,9 +63,77 @@ export const generateStory = async (params: {
 };
 
 /**
- * Generate Illustration using Pollinations.ai (Free & Unlimited)
+ * OpenAI Client for Image Generation
+ */
+const getOpenAIClient = () => {
+  const apiKey = useStore.getState().brandSettings.openaiApiKey;
+  if (!apiKey) return null;
+  
+  return new OpenAI({
+    apiKey: apiKey,
+    dangerouslyAllowBrowser: true
+  });
+};
+
+/**
+ * OpenRouter Client for Image Generation
+ */
+const getOpenRouterClient = () => {
+  const apiKey = useStore.getState().brandSettings.openrouterApiKey;
+  if (!apiKey) return null;
+  
+  return new OpenAI({
+    apiKey: apiKey,
+    baseURL: "https://openrouter.ai/api/v1",
+    dangerouslyAllowBrowser: true,
+    defaultHeaders: {
+      "HTTP-Referer": window.location.origin,
+      "X-Title": "Kisah Ai",
+    }
+  });
+};
+
+/**
+ * Generate Illustration using OpenRouter (Flux or Imagen)
  */
 export const generateIllustration = async (prompt: string) => {
+  const openrouter = getOpenRouterClient();
+  const openai = getOpenAIClient();
+  
+  if (openrouter) {
+    console.log("Using OpenRouter for image generation...");
+    try {
+      // OpenRouter supports image generation via chat completions for some models
+      // or standard image generation if the provider supports it.
+      // We'll try the standard image generation endpoint first.
+      const response = await openrouter.images.generate({
+        model: "black-forest-labs/flux-schnell", // A fast and high-quality model on OpenRouter
+        prompt: `Children's book illustration, cute cartoon style, bright colors, Disney-like aesthetic, high quality, consistent character: ${prompt}`,
+        n: 1,
+        size: "1024x1024",
+      });
+      return response.data[0].url || null;
+    } catch (err) {
+      console.error("OpenRouter image generation failed, trying OpenAI:", err);
+    }
+  }
+
+  if (openai) {
+    console.log("Using OpenAI for image generation...");
+    try {
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: `Children's book illustration, cute cartoon style, bright colors, Disney-like aesthetic, high quality, consistent character: ${prompt}`,
+        n: 1,
+        size: "1024x1024",
+      });
+      return response.data[0].url || null;
+    } catch (err) {
+      console.error("OpenAI image generation failed, falling back to Pollinations:", err);
+    }
+  }
+
+  // Fallback to Pollinations.ai if others are not configured or fail
   const seed = Math.floor(Math.random() * 1000000);
   const encodedPrompt = encodeURIComponent(`Children's book illustration, cute cartoon style, bright colors, Disney-like aesthetic, high quality, consistent character: ${prompt}`);
   return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${seed}`;
