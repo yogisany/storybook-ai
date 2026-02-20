@@ -70,18 +70,27 @@ export const generateStory = async (params: {
     },
   });
 
-  try {
-    let text = response.text;
-    if (!text) throw new Error("AI returned empty response");
-    
-    // Remove markdown code blocks if present
-    text = text.replace(/```json\n?|\n?```/g, "").trim();
-    
-    return JSON.parse(text);
-  } catch (err) {
-    console.error("Failed to parse AI response:", response.text);
-    throw new Error("Gagal memproses format cerita dari AI. Silakan coba lagi.");
-  }
+    try {
+      const text = response.text;
+      if (!text) throw new Error("AI returned empty response");
+      
+      // Clean the text more thoroughly
+      const cleanText = text.replace(/```json\n?|\n?```/g, "").trim();
+      
+      // Find the first '{' and last '}' to handle potential extra text from AI
+      const startIdx = cleanText.indexOf('{');
+      const endIdx = cleanText.lastIndexOf('}');
+      
+      if (startIdx === -1 || endIdx === -1) {
+        throw new Error("Format JSON tidak valid dalam respon AI");
+      }
+      
+      const jsonStr = cleanText.substring(startIdx, endIdx + 1);
+      return JSON.parse(jsonStr);
+    } catch (err) {
+      console.error("Failed to parse AI response:", response.text);
+      throw new Error("Gagal memproses format cerita dari AI. Silakan coba lagi.");
+    }
 };
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

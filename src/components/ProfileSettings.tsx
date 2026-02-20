@@ -109,12 +109,11 @@ export const ProfileSettings = () => {
     if (!file) return;
 
     try {
-      // 1. Resize image first
-      const resizedBase64 = await resizeImage(file);
+      setIsLoading(true);
+      // 1. Resize image first (Max 400px for better quality but still small)
+      const resizedBase64 = await resizeImage(file, type === 'logo' ? 400 : 200);
       
       if (type === 'avatar') {
-        setIsLoading(true);
-        
         // 2. Convert base64 to Blob for upload
         const res = await fetch(resizedBase64);
         const blob = await res.blob();
@@ -165,7 +164,7 @@ export const ProfileSettings = () => {
     }
   };
 
-  const resizeImage = (file: File): Promise<string> => {
+  const resizeImage = (file: File, maxDimension = 200): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -174,8 +173,8 @@ export const ProfileSettings = () => {
         img.src = event.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 200; // Limit to 200px
-          const MAX_HEIGHT = 200;
+          const MAX_WIDTH = maxDimension;
+          const MAX_HEIGHT = maxDimension;
           let width = img.width;
           let height = img.height;
 
@@ -194,7 +193,7 @@ export const ProfileSettings = () => {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.7)); // Compress to 70% quality JPEG
+          resolve(canvas.toDataURL('image/jpeg', 0.6)); // Lower quality to 60% to keep string short
         };
         img.onerror = reject;
       };
