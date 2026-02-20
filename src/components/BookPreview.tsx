@@ -106,6 +106,25 @@ export const BookPreview = () => {
     if (currentPage > 0) setCurrentPage(currentPage - 1);
   };
 
+  const handleGenerateCover = async () => {
+    if (!currentBook) return;
+    setIsGeneratingImg(true);
+    try {
+      const url = await generateIllustration(currentBook.coverPrompt);
+      if (url) {
+        updateBook(currentBook.id, { coverUrl: url });
+        await supabase.from('books').update({ cover_url: url }).eq('id', currentBook.id);
+      } else {
+        alert("Gagal membuat sampul. Silakan coba lagi.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(`Gagal membuat sampul: ${err.message}`);
+    } finally {
+      setIsGeneratingImg(false);
+    }
+  };
+
   const handleGenerateImage = async (pageIndex: number) => {
     const page = currentBook.pages[pageIndex];
     setIsGeneratingImg(true);
@@ -362,15 +381,32 @@ export const BookPreview = () => {
                 className="w-full flex flex-col items-center justify-center p-12 bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-center"
               >
                 {currentBook.coverUrl ? (
-                  <img 
-                    src={currentBook.coverUrl} 
-                    className="w-full max-w-md aspect-square object-cover rounded-2xl shadow-xl mb-8 border-4 border-white/20"
-                    alt="Cover"
-                    referrerPolicy="no-referrer"
-                  />
+                  <div className="relative group/cover w-full max-w-md">
+                    <img 
+                      src={currentBook.coverUrl} 
+                      className="w-full aspect-square object-cover rounded-2xl shadow-xl mb-8 border-4 border-white/20"
+                      alt="Cover"
+                      referrerPolicy="no-referrer"
+                    />
+                    <button 
+                      onClick={() => handleGenerateCover()}
+                      disabled={isGeneratingImg}
+                      className="absolute bottom-12 right-4 p-3 bg-white rounded-xl shadow-lg text-indigo-600 opacity-0 group-hover/cover:opacity-100 transition-all hover:scale-110 disabled:opacity-50"
+                    >
+                      {isGeneratingImg ? <Loader2 className="animate-spin" size={20} /> : <RefreshCw size={20} />}
+                    </button>
+                  </div>
                 ) : (
-                  <div className="w-full max-w-md aspect-square bg-white/10 rounded-2xl flex items-center justify-center mb-8">
+                  <div className="w-full max-w-md aspect-square bg-white/10 rounded-2xl flex flex-col items-center justify-center mb-8 gap-4">
                     <ImageIcon size={64} className="opacity-20" />
+                    <button 
+                      onClick={() => handleGenerateCover()}
+                      disabled={isGeneratingImg}
+                      className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-50 disabled:opacity-50"
+                    >
+                      {isGeneratingImg ? <Loader2 className="animate-spin" size={20} /> : <Wand2 size={20} />}
+                      Buat Sampul
+                    </button>
                   </div>
                 )}
                 <h2 className="text-5xl font-black mb-4 tracking-tight leading-tight">{currentBook.title}</h2>

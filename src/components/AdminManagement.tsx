@@ -300,8 +300,8 @@ export const AdminManagement = () => {
                         });
                       
                       if (error) {
-                        if (error.message.includes("groq_api_key") || error.code === "42703") {
-                          throw new Error("Kolom 'groq_api_key' tidak ditemukan di tabel 'brand_settings'. Silakan jalankan script SQL terbaru di Supabase.");
+                        if (error.code === "42703") {
+                          throw new Error("Kolom API Key baru tidak ditemukan di database. Silakan jalankan script SQL terbaru di Supabase (ALTER TABLE brand_settings ADD COLUMN ...).");
                         }
                         throw error;
                       }

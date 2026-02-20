@@ -88,28 +88,40 @@ export const generateIllustration = async (prompt: string) => {
   
   if (openrouter) {
     console.log("Mencoba generate gambar via OpenRouter...");
-    try {
-      const response = await openrouter.images.generate({
-        model: "black-forest-labs/flux-schnell", 
-        prompt: `Children's book illustration, cute cartoon style, bright colors, Disney-like aesthetic, high quality, consistent character: ${prompt}`,
-        n: 1,
-        size: "1024x1024",
-      });
+    
+    // List of models to try in order of preference
+    const models = [
+      "black-forest-labs/flux-schnell",
+      "openai/dall-e-3",
+      "google/imagen-3"
+    ];
 
-      if (response.data && response.data[0] && response.data[0].url) {
-        console.log("Berhasil generate gambar via OpenRouter");
-        return response.data[0].url;
-      } else {
-        throw new Error("Respon OpenRouter tidak berisi URL gambar.");
+    for (const model of models) {
+      try {
+        console.log(`Menggunakan model: ${model}`);
+        const response = await openrouter.images.generate({
+          model: model, 
+          prompt: `Children's book illustration, cute cartoon style, bright colors, Disney-like aesthetic, high quality, consistent character: ${prompt}`,
+          n: 1,
+          size: "1024x1024",
+        });
+
+        if (response.data && response.data[0] && response.data[0].url) {
+          console.log(`Berhasil generate gambar via OpenRouter (${model})`);
+          return response.data[0].url;
+        }
+      } catch (err: any) {
+        console.error(`Gagal dengan model ${model}:`, err?.message || err);
+        // If it's a 1033 or other Cloudflare/Network error, we might want to try the next model
+        // but if it's a 401/403, it's likely an API key issue, so we stop.
+        if (err?.status === 401 || err?.status === 403) {
+          console.error("Masalah Autentikasi: Cek API Key OpenRouter Anda.");
+          break; 
+        }
+        continue; // Try next model
       }
-    } catch (err: any) {
-      console.error("OpenRouter Gagal:", err);
-      // Jika error 1033 atau error lainnya, kita log detailnya
-      if (err?.status === 403 || err?.status === 401) {
-        console.error("Masalah Autentikasi: Cek apakah API Key OpenRouter Anda valid dan memiliki saldo.");
-      }
-      console.warn("Beralih ke Pollinations.ai sebagai cadangan...");
     }
+    console.warn("Semua model OpenRouter gagal, beralih ke Pollinations.ai...");
   } else {
     console.warn("API Key OpenRouter tidak ditemukan, menggunakan Pollinations.ai...");
   }
