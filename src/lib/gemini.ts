@@ -63,19 +63,6 @@ export const generateStory = async (params: {
 };
 
 /**
- * OpenAI Client for Image Generation
- */
-const getOpenAIClient = () => {
-  const apiKey = useStore.getState().brandSettings.openaiApiKey;
-  if (!apiKey) return null;
-  
-  return new OpenAI({
-    apiKey: apiKey,
-    dangerouslyAllowBrowser: true
-  });
-};
-
-/**
  * OpenRouter Client for Image Generation
  */
 const getOpenRouterClient = () => {
@@ -98,7 +85,6 @@ const getOpenRouterClient = () => {
  */
 export const generateIllustration = async (prompt: string) => {
   const openrouter = getOpenRouterClient();
-  const openai = getOpenAIClient();
   
   if (openrouter) {
     console.log("Using OpenRouter for image generation...");
@@ -114,22 +100,7 @@ export const generateIllustration = async (prompt: string) => {
       });
       return response.data[0].url || null;
     } catch (err) {
-      console.error("OpenRouter image generation failed, trying OpenAI:", err);
-    }
-  }
-
-  if (openai) {
-    console.log("Using OpenAI for image generation...");
-    try {
-      const response = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: `Children's book illustration, cute cartoon style, bright colors, Disney-like aesthetic, high quality, consistent character: ${prompt}`,
-        n: 1,
-        size: "1024x1024",
-      });
-      return response.data[0].url || null;
-    } catch (err) {
-      console.error("OpenAI image generation failed, falling back to Pollinations:", err);
+      console.error("OpenRouter image generation failed, falling back to Pollinations:", err);
     }
   }
 

@@ -74,7 +74,6 @@ export const ProfileSettings = () => {
           tagline: brandData.tagline,
           logo_url: brandData.logoUrl,
           groq_api_key: brandSettings.groqApiKey,
-          openai_api_key: brandSettings.openaiApiKey,
           openrouter_api_key: brandSettings.openrouterApiKey,
           updated_at: new Date().toISOString()
         });

@@ -37,7 +37,6 @@ interface BrandSettings {
   tagline: string;
   logoUrl: string;
   groqApiKey?: string;
-  openaiApiKey?: string;
   openrouterApiKey?: string;
 }
 
@@ -71,7 +70,6 @@ export const useStore = create<StoryState>((set, get) => ({
     tagline: 'by Erna',
     logoUrl: 'https://storage.googleapis.com/generativeai-downloads/images/sfx-logo.png',
     groqApiKey: '',
-    openaiApiKey: '',
     openrouterApiKey: ''
   },
   currentBook: null,
@@ -105,7 +103,6 @@ export const useStore = create<StoryState>((set, get) => ({
             tagline: data.tagline,
             logoUrl: data.logo_url,
             groqApiKey: data.groq_api_key || '',
-            openaiApiKey: data.openai_api_key || '',
             openrouterApiKey: data.openrouter_api_key || ''
           }
         });
