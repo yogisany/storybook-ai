@@ -259,7 +259,8 @@ export const AdminManagement = () => {
                 <div className="relative">
                   <Lock className="absolute left-4 top-4 text-amber-400" size={18} />
                   <textarea
-                    className="w-full pl-12 pr-4 py-3 rounded-2xl border border-amber-200 focus:ring-2 focus:ring-amber-500 outline-none transition-all bg-white min-h-[120px]"
+                    className="w-full pl-12 pr-4 py-3 rounded-2xl border border-amber-200 focus:ring-2 focus:ring-amber-500 outline-none transition-all bg-white min-h-[120px] font-mono text-xs"
+                    style={{ WebkitTextSecurity: 'disc' } as any}
                     placeholder="Masukkan API Key Gemini (satu per baris)..."
                     value={brandSettings.geminiApiKeys || ''}
                     onChange={(e) => updateBrand({ geminiApiKeys: e.target.value })}

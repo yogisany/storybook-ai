@@ -45,6 +45,7 @@ async function callWithRotation<T>(
       } catch (err: any) {
         lastError = err;
         const isRateLimit = err?.message?.includes("429") || err?.status === "RESOURCE_EXHAUSTED";
+        const isKeyError = err?.message?.includes("403") || err?.message?.includes("leaked") || err?.message?.includes("API key not valid");
         
         if (isRateLimit) {
           if (attempt < retriesPerKey) {
@@ -58,8 +59,13 @@ async function callWithRotation<T>(
             console.warn(`Key ${clientIdx + 1} exhausted, rotating to key ${clientIdx + 2}...`);
             break; // Break inner loop to try next client
           }
+        } else if (isKeyError && clientIdx < clients.length - 1) {
+          // Switch to next key immediately for permanent key errors
+          console.warn(`Key ${clientIdx + 1} is invalid or leaked, rotating to key ${clientIdx + 2}...`);
+          break; // Break inner loop to try next client
         }
-        // If not a rate limit, or no more retries/keys, throw immediately
+        
+        // If not a rate limit or key error, or no more retries/keys, throw immediately
         throw err;
       }
     }

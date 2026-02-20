@@ -65,8 +65,8 @@ ALTER TABLE pages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 
--- Brand Settings: Everyone can read, only admins can update
-CREATE POLICY "Brand settings are viewable by everyone" ON brand_settings FOR SELECT USING (true);
+-- Brand Settings: Only authenticated users can read, only admins can update
+CREATE POLICY "Brand settings are viewable by authenticated users" ON brand_settings FOR SELECT USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Only admins can update brand settings" ON brand_settings FOR ALL 
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
