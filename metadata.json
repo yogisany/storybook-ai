@@ -1,0 +1,7 @@
+{
+  "name": "Remix: Remix: Kisah Ai by Erna",
+  "description": "Platform bertenaga AI untuk membuat, mengilustrasikan, dan menarasikan buku cerita anak-anak yang dipersonalisasi.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
