@@ -278,12 +278,17 @@ export const AdminManagement = () => {
                       const { error } = await supabase
                         .from('brand_settings')
                         .upsert({ 
-                          id: 1, // Assuming single row with ID 1 or using upsert logic
+                          id: '00000000-0000-0000-0000-000000000000', 
                           gemini_api_key: brandSettings.geminiApiKey,
                           updated_at: new Date().toISOString()
                         });
                       
-                      if (error) throw error;
+                      if (error) {
+                        if (error.message.includes("gemini_api_key") || error.code === "42703") {
+                          throw new Error("Kolom 'gemini_api_key' tidak ditemukan di tabel 'brand_settings'. Silakan jalankan script SQL terbaru di Supabase (lihat file supabase_schema.sql).");
+                        }
+                        throw error;
+                      }
                       alert('API Key berhasil diperbarui!');
                     } catch (err: any) {
                       alert(`Gagal memperbarui API Key: ${err.message}`);
