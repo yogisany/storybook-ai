@@ -19,7 +19,7 @@ let supabaseAdmin: any = null;
 const getSupabaseAdmin = () => {
   if (supabaseAdmin) return supabaseAdmin;
   
-  const url = process.env.VITE_SUPABASE_URL;
+  const url = process.env.VITE_SUPABASE_URL || 'https://pfkafmtorgbashyqxfju.supabase.co';
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
   if (!url || !key) {
@@ -69,14 +69,25 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Request logger
+  app.use((req, res, next) => {
+    if (req.url.startsWith('/api')) {
+      console.log(`[Server] ${req.method} ${req.url}`);
+    }
+    next();
+  });
+
   // API Routes
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
   });
 
   // Proxy for Freepik Image Generation (to avoid CORS)
-  app.post("/api/generate-image", async (req, res) => {
-    console.log(`[Freepik Proxy] Request received: ${req.method} ${req.url}`);
+  app.use("/api/generate-image", async (req, res) => {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method Not Allowed. Use POST." });
+    }
+
     const { prompt, apiKey } = req.body;
     
     if (!apiKey) {
