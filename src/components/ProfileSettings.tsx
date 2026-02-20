@@ -74,6 +74,7 @@ export const ProfileSettings = () => {
           tagline: brandData.tagline,
           logo_url: brandData.logoUrl,
           gemini_api_keys: brandSettings.geminiApiKeys,
+          groq_api_key: brandSettings.groqApiKey,
           updated_at: new Date().toISOString()
         });
 

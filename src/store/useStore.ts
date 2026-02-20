@@ -37,6 +37,7 @@ interface BrandSettings {
   tagline: string;
   logoUrl: string;
   geminiApiKeys?: string; // Stored as newline-separated string
+  groqApiKey?: string;
 }
 
 interface StoryState {
@@ -100,7 +101,8 @@ export const useStore = create<StoryState>((set, get) => ({
             name: data.name,
             tagline: data.tagline,
             logoUrl: data.logo_url,
-            geminiApiKeys: data.gemini_api_keys || data.gemini_api_key || ''
+            geminiApiKeys: data.gemini_api_keys || data.gemini_api_key || '',
+            groqApiKey: data.groq_api_key || ''
           }
         });
       }

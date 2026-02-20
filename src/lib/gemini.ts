@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type, ThinkingLevel, Modality } from "@google/genai";
 import { useStore } from "../store/useStore";
+import OpenAI from "openai";
 
 export const getGeminiClients = () => {
   // Get keys from store (newline or comma separated)
@@ -22,6 +23,17 @@ export const getGeminiClients = () => {
   }
   
   return allKeys.map(apiKey => new GoogleGenAI({ apiKey }));
+};
+
+const getGroqClient = () => {
+  const apiKey = useStore.getState().brandSettings.groqApiKey;
+  if (!apiKey) return null;
+  
+  return new OpenAI({
+    apiKey: apiKey,
+    baseURL: "https://api.groq.com/openai/v1",
+    dangerouslyAllowBrowser: true
+  });
 };
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -99,6 +111,29 @@ export const generateStory = async (params: {
   The characterDescription should be very specific about hair color, clothing, and features.
   Each illustrationPrompt MUST start with a reference to the characterDescription.`;
 
+  const groq = getGroqClient();
+  
+  if (groq) {
+    console.log("Using Groq for story generation...");
+    try {
+      const completion = await groq.chat.completions.create({
+        messages: [
+          { role: "system", content: "You are a creative children's book author. Always respond in valid JSON format." },
+          { role: "user", content: prompt }
+        ],
+        model: "llama-3.3-70b-versatile",
+        response_format: { type: "json_object" }
+      });
+      
+      const content = completion.choices[0].message.content;
+      if (!content) throw new Error("Groq returned empty response");
+      return JSON.parse(content);
+    } catch (err) {
+      console.error("Groq failed, falling back to Gemini:", err);
+      // Fallback to Gemini handled below
+    }
+  }
+
   const response = await callWithRotation((ai) => 
     ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -154,28 +189,14 @@ export const generateStory = async (params: {
 };
 
 export const generateIllustration = async (prompt: string) => {
-  const fullPrompt = `Children's book illustration, cute cartoon style, bright colors, Disney-like aesthetic, high quality: ${prompt}`;
+  // Use Pollinations.ai for free, fast, and unlimited image generation
+  const seed = Math.floor(Math.random() * 1000000);
+  const encodedPrompt = encodeURIComponent(`Children's book illustration, cute cartoon style, bright colors, Disney-like aesthetic, high quality, consistent character: ${prompt}`);
+  const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${seed}`;
   
-  return await callWithRotation(async (ai) => {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-image",
-      contents: {
-        parts: [{ text: fullPrompt }],
-      },
-      config: {
-        imageConfig: {
-          aspectRatio: "1:1",
-        },
-      },
-    });
-
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if (part.inlineData) {
-        return `data:image/png;base64,${part.inlineData.data}`;
-      }
-    }
-    return null;
-  }, 2); // Allow 2 retries per key for images
+  // We return the URL directly as Pollinations is a direct image URL service
+  // But we'll try to fetch it first to ensure it's ready (optional but good for UX)
+  return pollinationsUrl;
 };
 
 export const generateNarration = async (text: string, voice: string = "Kore") => {

@@ -270,6 +270,24 @@ export const AdminManagement = () => {
                   <strong>Penting:</strong> Masukkan beberapa API Key (satu per baris) untuk rotasi otomatis. Sistem akan otomatis pindah ke key berikutnya jika salah satu terkena limit (429).
                 </p>
               </div>
+
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-amber-700 mb-2 uppercase tracking-wider">Groq API Key (Untuk Teks Cepat)</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-400" size={18} />
+                  <input
+                    type="password"
+                    className="w-full pl-12 pr-4 py-3 rounded-2xl border border-amber-200 focus:ring-2 focus:ring-amber-500 outline-none transition-all bg-white"
+                    placeholder="Masukkan API Key Groq..."
+                    value={brandSettings.groqApiKey || ''}
+                    onChange={(e) => updateBrand({ groqApiKey: e.target.value })}
+                  />
+                </div>
+                <p className="mt-3 text-[11px] text-amber-600 leading-relaxed">
+                  <strong>Info:</strong> Jika diisi, sistem akan menggunakan Groq untuk membuat cerita (teks) agar lebih cepat.
+                </p>
+              </div>
+
               <div className="flex items-end">
                 <button
                   onClick={async () => {
@@ -283,6 +301,7 @@ export const AdminManagement = () => {
                           tagline: brandSettings.tagline,
                           logo_url: brandSettings.logoUrl,
                           gemini_api_keys: brandSettings.geminiApiKeys,
+                          groq_api_key: brandSettings.groqApiKey,
                           updated_at: new Date().toISOString()
                         });
                       
