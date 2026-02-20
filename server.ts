@@ -70,24 +70,13 @@ async function startServer() {
   app.use(express.json());
 
   // API Routes
-  const apiRouter = express.Router();
-
-  apiRouter.get("/health", (req, res) => {
+  app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
   });
 
   // Proxy for Freepik Image Generation (to avoid CORS)
-  apiRouter.all("/generate-image", async (req, res) => {
+  app.post("/api/generate-image", async (req, res) => {
     console.log(`[Freepik Proxy] Request received: ${req.method} ${req.url}`);
-    
-    if (req.method === "GET") {
-      return res.json({ message: "Freepik Proxy is active. Use POST to generate images." });
-    }
-
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method Not Allowed" });
-    }
-
     const { prompt, apiKey } = req.body;
     
     if (!apiKey) {
@@ -134,7 +123,7 @@ async function startServer() {
   });
 
   // Admin: Create User without Sign Up
-  apiRouter.post("/admin/create-user", async (req, res) => {
+  app.post("/api/admin/create-user", async (req, res) => {
     console.log("Received admin user creation request:", req.body.email);
     const { email, password, name, role } = req.body;
     
@@ -187,7 +176,7 @@ async function startServer() {
   });
 
   // User Routes
-  apiRouter.post("/users", (req, res) => {
+  app.post("/api/users", (req, res) => {
     const { id, email, name } = req.body;
     try {
       const stmt = db.prepare("INSERT OR IGNORE INTO users (id, email, name) VALUES (?, ?, ?)");
@@ -200,7 +189,7 @@ async function startServer() {
   });
 
   // Book Routes
-  apiRouter.post("/books", (req, res) => {
+  app.post("/api/books", (req, res) => {
     const { id, userId, title, theme, targetAge, moral, coverUrl } = req.body;
     try {
       const stmt = db.prepare("INSERT INTO books (id, userId, title, theme, targetAge, moral, coverUrl) VALUES (?, ?, ?, ?, ?, ?, ?)");
@@ -211,7 +200,7 @@ async function startServer() {
     }
   });
 
-  apiRouter.get("/books/:userId", (req, res) => {
+  app.get("/api/books/:userId", (req, res) => {
     try {
       const books = db.prepare("SELECT * FROM books WHERE userId = ? ORDER BY createdAt DESC").all(req.params.userId);
       res.json(books);
@@ -220,7 +209,7 @@ async function startServer() {
     }
   });
 
-  apiRouter.post("/pages", (req, res) => {
+  app.post("/api/pages", (req, res) => {
     const { id, bookId, pageNumber, content, illustrationUrl } = req.body;
     try {
       const stmt = db.prepare("INSERT INTO pages (id, bookId, pageNumber, content, illustrationUrl) VALUES (?, ?, ?, ?, ?)");
@@ -231,7 +220,7 @@ async function startServer() {
     }
   });
 
-  apiRouter.get("/books/:bookId/pages", (req, res) => {
+  app.get("/api/books/:bookId/pages", (req, res) => {
     try {
       const pages = db.prepare("SELECT * FROM pages WHERE bookId = ? ORDER BY pageNumber ASC").all(req.params.bookId);
       res.json(pages);
@@ -240,8 +229,10 @@ async function startServer() {
     }
   });
 
-  // Mount API Router
-  app.use("/api", apiRouter);
+  // Catch-all for API routes that don't exist
+  app.all("/api/*", (req, res) => {
+    res.status(404).json({ error: `API route not found: ${req.method} ${req.url}` });
+  });
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
