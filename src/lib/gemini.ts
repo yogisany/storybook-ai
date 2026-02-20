@@ -87,24 +87,34 @@ export const generateIllustration = async (prompt: string) => {
   const openrouter = getOpenRouterClient();
   
   if (openrouter) {
-    console.log("Using OpenRouter for image generation...");
+    console.log("Mencoba generate gambar via OpenRouter...");
     try {
-      // OpenRouter supports image generation via chat completions for some models
-      // or standard image generation if the provider supports it.
-      // We'll try the standard image generation endpoint first.
       const response = await openrouter.images.generate({
-        model: "black-forest-labs/flux-schnell", // A fast and high-quality model on OpenRouter
+        model: "black-forest-labs/flux-schnell", 
         prompt: `Children's book illustration, cute cartoon style, bright colors, Disney-like aesthetic, high quality, consistent character: ${prompt}`,
         n: 1,
         size: "1024x1024",
       });
-      return response.data[0].url || null;
-    } catch (err) {
-      console.error("OpenRouter image generation failed, falling back to Pollinations:", err);
+
+      if (response.data && response.data[0] && response.data[0].url) {
+        console.log("Berhasil generate gambar via OpenRouter");
+        return response.data[0].url;
+      } else {
+        throw new Error("Respon OpenRouter tidak berisi URL gambar.");
+      }
+    } catch (err: any) {
+      console.error("OpenRouter Gagal:", err);
+      // Jika error 1033 atau error lainnya, kita log detailnya
+      if (err?.status === 403 || err?.status === 401) {
+        console.error("Masalah Autentikasi: Cek apakah API Key OpenRouter Anda valid dan memiliki saldo.");
+      }
+      console.warn("Beralih ke Pollinations.ai sebagai cadangan...");
     }
+  } else {
+    console.warn("API Key OpenRouter tidak ditemukan, menggunakan Pollinations.ai...");
   }
 
-  // Fallback to Pollinations.ai if others are not configured or fail
+  // Fallback to Pollinations.ai
   const seed = Math.floor(Math.random() * 1000000);
   const encodedPrompt = encodeURIComponent(`Children's book illustration, cute cartoon style, bright colors, Disney-like aesthetic, high quality, consistent character: ${prompt}`);
   return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${seed}`;
