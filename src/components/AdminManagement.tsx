@@ -279,6 +279,9 @@ export const AdminManagement = () => {
                         .from('brand_settings')
                         .upsert({ 
                           id: '00000000-0000-0000-0000-000000000000', 
+                          name: brandSettings.name,
+                          tagline: brandSettings.tagline,
+                          logo_url: brandSettings.logoUrl,
                           gemini_api_key: brandSettings.geminiApiKey,
                           updated_at: new Date().toISOString()
                         });

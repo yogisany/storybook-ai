@@ -73,6 +73,7 @@ export const ProfileSettings = () => {
           name: brandData.name,
           tagline: brandData.tagline,
           logo_url: brandData.logoUrl,
+          gemini_api_key: brandSettings.geminiApiKey,
           updated_at: new Date().toISOString()
         });
 
