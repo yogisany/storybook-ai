@@ -30,6 +30,7 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
     setLoading(true);
     setError(null);
     try {
+      // 1. Generate Story Text (AI) - This is usually fast with Groq
       const storyData = await generateStory({
         ...formData,
         pages: formData.pages
@@ -39,7 +40,7 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
         throw new Error("Gagal mendapatkan data cerita dari AI.");
       }
 
-      // 1. Save Book to Supabase
+      // 2. Save Book to Supabase (Initial Save)
       const { data: book, error: bookError } = await supabase
         .from('books')
         .insert({
@@ -56,21 +57,13 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
 
       if (bookError) {
         console.error("Supabase Book Error:", bookError);
-        throw new Error(`Gagal menyimpan buku: ${bookError.message}. Pastikan tabel 'books' sudah dibuat di Supabase.`);
-      }
-
-      // 2. Generate Cover (Optional)
-      let coverUrl = null;
-      try {
-        coverUrl = await generateIllustration(storyData.coverPrompt);
-        if (coverUrl) {
-          await supabase.from('books').update({ cover_url: coverUrl }).eq('id', book.id);
+        if (bookError.message.includes("timeout")) {
+          throw new Error("Koneksi database lambat (Timeout). Silakan coba lagi dalam beberapa saat.");
         }
-      } catch (imgErr) {
-        console.warn("Failed to generate cover image:", imgErr);
+        throw new Error(`Gagal menyimpan buku: ${bookError.message}`);
       }
 
-      // 3. Save Pages to Supabase
+      // 3. Save Pages to Supabase (Save content first, images later)
       const pagesToInsert = storyData.pages.map((p: any) => ({
         book_id: book.id,
         page_number: p.pageNumber,
@@ -88,30 +81,49 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
         throw new Error(`Gagal menyimpan halaman: ${pagesError.message}`);
       }
 
+      // 4. Set current book state so user can see the text immediately
       const fullBook: any = {
         id: book.id,
         title: book.title,
         theme: book.theme,
         targetAge: book.target_age,
         moral: book.moral,
-        coverUrl: coverUrl,
+        coverUrl: null,
         coverPrompt: book.cover_prompt,
         characterDescription: book.character_description,
         pages: pages.map((p: any) => ({
           id: p.id,
           pageNumber: p.page_number,
           content: p.content,
-          illustrationUrl: p.illustration_url || null,
+          illustrationUrl: null,
           illustrationPrompt: p.illustration_prompt,
-          narrationUrl: p.narration_url || null
-        }))
+          narrationUrl: null
+        })).sort((a: any, b: any) => a.pageNumber - b.pageNumber)
       };
 
       setCurrentBook(fullBook);
       onComplete();
+
+      // 5. Generate Cover in Background (Don't block the UI completion)
+      // We do this after onComplete() so the user is already in the preview mode
+      try {
+        const coverUrl = await generateIllustration(storyData.coverPrompt);
+        if (coverUrl) {
+          await supabase.from('books').update({ cover_url: coverUrl }).eq('id', book.id);
+          // Update local state as well
+          useStore.getState().updateBook(book.id, { coverUrl });
+        }
+      } catch (imgErr) {
+        console.warn("Failed to generate cover image in background:", imgErr);
+      }
+
     } catch (err: any) {
       console.error("Generation Error:", err);
-      setError(err.message || "Terjadi kesalahan saat membuat cerita. Silakan coba lagi.");
+      let msg = err.message || "Terjadi kesalahan saat membuat cerita.";
+      if (msg.includes("timeout")) {
+        msg = "Server database sedang sibuk (Timeout). Cerita mungkin sudah tersimpan, silakan cek beranda atau coba lagi.";
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
