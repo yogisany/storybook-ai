@@ -40,11 +40,21 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
         throw new Error("Gagal mendapatkan data cerita dari AI.");
       }
 
+      // Verify session before saving
+      const { data: sessionData } = await supabase.auth.getSession();
+      const sessionUser = sessionData.session?.user;
+      
+      if (!sessionUser) {
+        throw new Error("Sesi login tidak ditemukan atau kadaluarsa. Silakan login kembali.");
+      }
+
+      console.log("Saving book for user:", sessionUser.id);
+
       // 2. Save Book to Supabase (Initial Save)
       const { data: book, error: bookError } = await supabase
         .from('books')
         .insert({
-          user_id: user.id,
+          user_id: sessionUser.id,
           title: storyData.title,
           theme: formData.theme,
           target_age: formData.age,

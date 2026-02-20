@@ -74,8 +74,10 @@ CREATE POLICY "Only admins can update brand settings" ON brand_settings FOR ALL
 
 -- Books: Users can only see and manage their own books
 CREATE POLICY "Users can manage their own books" ON books FOR ALL 
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 -- Pages: Users can manage pages of their own books
 CREATE POLICY "Users can manage pages of their own books" ON pages FOR ALL 
-  USING (EXISTS (SELECT 1 FROM books WHERE id = book_id AND user_id = auth.uid()));
+  USING (EXISTS (SELECT 1 FROM books WHERE id = book_id AND user_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM books WHERE id = book_id AND user_id = auth.uid()));
