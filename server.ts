@@ -69,28 +69,35 @@ async function startServer() {
 
   app.use(express.json());
 
-  // Logging middleware for API requests
-  app.use("/api", (req, res, next) => {
-    console.log(`[API] ${req.method} ${req.url}`);
-    next();
-  });
-
   // API Routes
-  app.get("/api/health", (req, res) => {
+  const apiRouter = express.Router();
+
+  apiRouter.get("/health", (req, res) => {
     res.json({ status: "ok" });
   });
 
   // Proxy for Freepik Image Generation (to avoid CORS)
-  app.post("/api/generate-image", async (req, res) => {
+  apiRouter.all("/generate-image", async (req, res) => {
+    console.log(`[Freepik Proxy] Request received: ${req.method} ${req.url}`);
+    
+    if (req.method === "GET") {
+      return res.json({ message: "Freepik Proxy is active. Use POST to generate images." });
+    }
+
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method Not Allowed" });
+    }
+
     const { prompt, apiKey } = req.body;
     
     if (!apiKey) {
+      console.error("[Freepik Proxy] Missing API Key");
       return res.status(400).json({ error: "Freepik API Key is required" });
     }
 
     try {
-      console.log(`[Freepik Proxy] Generating image for prompt: ${prompt.substring(0, 50)}...`);
-      const response = await fetch("https://api.freepik.com/v1/ai/text-to-image", {
+      console.log(`[Freepik Proxy] Calling Freepik API for prompt: ${prompt?.substring(0, 50)}...`);
+      const freepikResponse = await fetch("https://api.freepik.com/v1/ai/text-to-image", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -109,22 +116,25 @@ async function startServer() {
         })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error from Freepik" }));
-        console.error("[Freepik Proxy] Error response:", errorData);
-        return res.status(response.status).json(errorData);
+      console.log(`[Freepik Proxy] Freepik API status: ${freepikResponse.status}`);
+
+      if (!freepikResponse.ok) {
+        const errorData = await freepikResponse.json().catch(() => ({ message: "Unknown error from Freepik" }));
+        console.error("[Freepik Proxy] Freepik Error:", errorData);
+        return res.status(freepikResponse.status).json(errorData);
       }
 
-      const data = await response.json();
+      const data = await freepikResponse.json();
+      console.log("[Freepik Proxy] Success!");
       res.json(data);
     } catch (error: any) {
-      console.error("[Freepik Proxy] Request failed:", error);
+      console.error("[Freepik Proxy] Critical Error:", error);
       res.status(500).json({ error: error.message || "Internal Server Error" });
     }
   });
 
   // Admin: Create User without Sign Up
-  app.post("/api/admin/create-user", async (req, res) => {
+  apiRouter.post("/admin/create-user", async (req, res) => {
     console.log("Received admin user creation request:", req.body.email);
     const { email, password, name, role } = req.body;
     
@@ -177,7 +187,7 @@ async function startServer() {
   });
 
   // User Routes
-  app.post("/api/users", (req, res) => {
+  apiRouter.post("/users", (req, res) => {
     const { id, email, name } = req.body;
     try {
       const stmt = db.prepare("INSERT OR IGNORE INTO users (id, email, name) VALUES (?, ?, ?)");
@@ -190,7 +200,7 @@ async function startServer() {
   });
 
   // Book Routes
-  app.post("/api/books", (req, res) => {
+  apiRouter.post("/books", (req, res) => {
     const { id, userId, title, theme, targetAge, moral, coverUrl } = req.body;
     try {
       const stmt = db.prepare("INSERT INTO books (id, userId, title, theme, targetAge, moral, coverUrl) VALUES (?, ?, ?, ?, ?, ?, ?)");
@@ -201,7 +211,7 @@ async function startServer() {
     }
   });
 
-  app.get("/api/books/:userId", (req, res) => {
+  apiRouter.get("/books/:userId", (req, res) => {
     try {
       const books = db.prepare("SELECT * FROM books WHERE userId = ? ORDER BY createdAt DESC").all(req.params.userId);
       res.json(books);
@@ -210,7 +220,7 @@ async function startServer() {
     }
   });
 
-  app.post("/api/pages", (req, res) => {
+  apiRouter.post("/pages", (req, res) => {
     const { id, bookId, pageNumber, content, illustrationUrl } = req.body;
     try {
       const stmt = db.prepare("INSERT INTO pages (id, bookId, pageNumber, content, illustrationUrl) VALUES (?, ?, ?, ?, ?)");
@@ -221,7 +231,7 @@ async function startServer() {
     }
   });
 
-  app.get("/api/books/:bookId/pages", (req, res) => {
+  apiRouter.get("/books/:bookId/pages", (req, res) => {
     try {
       const pages = db.prepare("SELECT * FROM pages WHERE bookId = ? ORDER BY pageNumber ASC").all(req.params.bookId);
       res.json(pages);
@@ -229,6 +239,9 @@ async function startServer() {
       res.status(500).json({ error: (error as Error).message });
     }
   });
+
+  // Mount API Router
+  app.use("/api", apiRouter);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

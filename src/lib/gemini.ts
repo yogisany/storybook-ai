@@ -82,9 +82,23 @@ export const generateIllustration = async (prompt: string) => {
         })
       });
 
+      const contentType = response.headers.get("content-type");
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Server Proxy Error: ${response.status}`);
+        let errorMessage = `Server Proxy Error: ${response.status}`;
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } else {
+          const errorText = await response.text();
+          console.error("Server returned non-JSON error:", errorText.substring(0, 200));
+        }
+        throw new Error(errorMessage);
+      }
+
+      if (!contentType || !contentType.includes("application/json")) {
+        const errorText = await response.text();
+        console.error("Server returned HTML instead of JSON:", errorText.substring(0, 200));
+        throw new Error("Server returned invalid response format (HTML).");
       }
 
       const data = await response.json();
