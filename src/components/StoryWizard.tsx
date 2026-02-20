@@ -41,14 +41,28 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
       }
 
       // Verify session before saving
-      const { data: sessionData } = await supabase.auth.getSession();
-      const sessionUser = sessionData.session?.user;
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("Session retrieval error:", sessionError);
+        throw new Error(`Gagal mengambil sesi: ${sessionError.message}`);
+      }
+
+      const sessionUser = session?.user;
       
       if (!sessionUser) {
+        console.error("No session user found. Session data:", session);
         throw new Error("Sesi login tidak ditemukan atau kadaluarsa. Silakan login kembali.");
       }
 
-      console.log("Saving book for user:", sessionUser.id);
+      // Debug: Check what Supabase thinks the current user is
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      console.log("[Supabase Debug] Session User ID:", sessionUser.id);
+      console.log("[Supabase Debug] Auth User ID:", authUser?.id);
+
+      if (sessionUser.id !== authUser?.id) {
+        console.warn("[Supabase Debug] Session and Auth user mismatch!");
+      }
 
       // 2. Save Book to Supabase (Initial Save)
       const { data: book, error: bookError } = await supabase
